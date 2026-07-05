@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CAT HUB 卡密管理系统</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; }
+html, body {
+    background: #0d1117;
+    min-height: 100vh;
+    color: #fff;
+    -webkit-tap-highlight-color: transparent;
+}
+body {
+    padding: 0;
+    padding-bottom: 40px;
+}
+.container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+/* 顶部导航 */
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(13,17,23,0.95);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+}
+.logo {
+    font-size: 20px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #58a6ff 0%, #a371f7 50%, #f778ba 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.settings-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(88,166,255,0.1);
+    border: 1px solid rgba(88,166,255,0.2);
+    color: #58a6ff;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.settings-btn:active { transform: scale(0.95); background: rgba(88,166,255,0.2); }
+
+/* 头部 */
+.header {
+    text-align: center;
+    padding: 24px 0 16px;
+}
+.header h1 {
+    font-size: 26px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #58a6ff 0%, #a371f7 50%, #f778ba 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+}
+.header p {
+    color: #8b949e;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* 卡片 */
+.card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: all 0.2s;
+}
+.card:active { transform: scale(0.995); }
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.card-header .bar {
+    width: 4px;
+    height: 18px;
+    background: linear-gradient(180deg, #58a6ff, #a371f7);
+    border-radius: 2px;
+}
+.card-header .title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #e6edf3;
+}
+
+/* 统计 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.stat-card {
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    padding: 20px 16px;
+    text-align: center;
+}
+.stat-value {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+.stat-value.blue { color: #58a6ff; }
+.stat-value.green { color: #3fb950; }
+.stat-value.red { color: #f85149; }
+.stat-value.orange { color: #d29922; }
+.stat-label {
+    font-size: 12px;
+    color: #8b949e;
+    font-weight: 500;
+}
+
+/* 表单 */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.form-group {
+    margin-bottom: 12px;
+}
+.form-group.full { grid-column: 1 / -1; }
+label {
+    display: block;
+    font-size: 12px;
+    color: #8b949e;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+input, select {
+    width: 100%;
+    padding: 12px 14px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    color: #e6edf3;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.15s;
+    -webkit-appearance: none;
+    appearance: none;
+}
+input:focus, select:focus {
+    border-color: #58a6ff;
+    box-shadow: 0 0 0 3px rgba(88,166,255,0.1);
+}
+select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b949e' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+}
+select option { background: #0d1117; color: #e6edf3; }
+
+/* 按钮 */
+.btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+    background: linear-gradient(135deg, #1f6feb 0%, #8957e5 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(137,87,229,0.25);
+}
+.btn-primary:active { box-shadow: 0 2px 8px rgba(137,87,229,0.2); }
+.btn-secondary {
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+}
+.btn-secondary:active { background: #30363d; }
+.btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+}
+.btn-danger {
+    background: #da3633;
+    color: #fff;
+    padding: 8px 14px;
+    font-size: 12px;
+    width: auto;
+    border-radius: 8px;
+}
+
+/* 表格 */
+.table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 0.8fr;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid #21262d;
+    font-size: 11px;
+    color: #8b949e;
+    font-weight: 600;
+}
+.table-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 0.8fr;
+    gap: 8px;
+    padding: 12px 0;
+    border-bottom: 1px solid #21262d;
+    align-items: center;
+    font-size: 13px;
+}
+.code-cell {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: #58a6ff;
+    cursor: pointer;
+    font-size: 12px;
+    word-break: break-all;
+}
+.status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.status-active { background: rgba(63,185,80,0.15); color: #3fb950; }
+.status-used { background: rgba(88,166,255,0.15); color: #58a6ff; }
+.status-expired { background: rgba(210,153,34,0.15); color: #d29922; }
+
+/* 弹窗 */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+.modal.active { display: flex; }
+.modal-sheet {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 32px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 85vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+.modal-sheet h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #21262d;
+    border: none;
+    color: #8b949e;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* Toast */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(120px);
+    background: #161b22;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 300;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    white-space: nowrap;
+}
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #8b949e;
+    font-size: 13px;
+}
+
+/* 筛选栏 */
+.filter-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+/* 脚本标签 */
+.script-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+.tag {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(88,166,255,0.1);
+    color: #58a6ff;
+    border: 1px solid rgba(88,166,255,0.2);
+}
+
+/* 分隔线 */
+.divider {
+    height: 1px;
+    background: #21262d;
+    margin: 16px 0;
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+    <div class="logo">🎫 CAT HUB</div>
+    <div class="settings-btn" onclick="openSettings()">⚙️</div>
+</div>
+
+<div class="container">
+    <div class="header">
+        <h1>卡密管理系统</h1>
+        <p>通用卡密 · 战斗脚本 / 小猫脚本 / UTMM中文 / NPC选项 / 代码检测</p>
+    </div>
+
+    <!-- 生成卡密 -->
+    <div class="card">
+        <div class="card-header">
+            <div class="bar"></div>
+            <div class="title">生成卡密</div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>卡密时长</label>
+                <select id="duration">
+                    <option value="1">1天</option>
+                    <option value="7">7天</option>
+                    <option value="30" selected>30天</option>
+                    <option value="90">90天</option>
+                    <option value="180">180天</option>
+                    <option value="365">365天</option>
+                    <option value="9999">永久</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>生成数量</label>
+                <input type="number" id="count" value="1" min="1" max="100">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>备注（可选）</label>
+            <input type="text" id="note" placeholder="比如：张三的卡密">
+        </div>
+        <button class="btn btn-primary" onclick="generateKeys()">✨ 生成卡密</button>
+    </div>
+
+    <!-- 统计 -->
+    <div class="card">
+        <div class="card-header">
+            <div class="bar"></div>
+            <div class="title">数据统计</div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value blue" id="statTotal">0</div>
+                <div class="stat-label">总卡密数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value green" id="statActive">0</div>
+                <div class="stat-label">有效卡密</div>
+            </div>
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-secondary" onclick="syncToGist()">☁️ 同步</button>
+            <button class="btn btn-secondary" onclick="loadFromGist()">📥 拉取</button>
+        </div>
+    </div>
+
+    <!-- 卡密列表 -->
+    <div class="card">
+        <div class="card-header">
+            <div class="bar"></div>
+            <div class="title">卡密列表</div>
+        </div>
+        <div class="filter-bar">
+            <select id="filterStatus" onchange="renderKeys()">
+                <option value="all">全部状态</option>
+                <option value="active">有效</option>
+                <option value="used">已使用</option>
+                <option value="expired">已过期</option>
+            </select>
+            <input type="text" id="searchKey" placeholder="搜索卡密..." oninput="renderKeys()">
+        </div>
+        <div id="keyList">
+            <div class="empty-state">暂无卡密数据</div>
+        </div>
+    </div>
+</div>
+
+<!-- 设置弹窗 -->
+<div class="modal" id="settingsModal">
+    <div class="modal-sheet">
+        <h2>⚙️ 设置</h2>
+        <div class="form-group">
+            <label>GitHub Token</label>
+            <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxx">
+        </div>
+        <div class="form-group">
+            <label>卡密数据 Gist ID</label>
+            <input type="text" id="gistId" placeholder="留空自动创建">
+        </div>
+        <div class="form-group">
+            <label>加密密钥</label>
+            <input type="text" id="encryptKey" value="CAT_Script_Key_2024!">
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+        <div style="height: 8px;"></div>
+        <button class="btn btn-secondary" onclick="closeSettings()">关闭</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== 数据存储 =====
+let keys = JSON.parse(localStorage.getItem('bk_keys') || '[]');
+
+function saveSettings() {
+    localStorage.setItem('bk_token', document.getElementById('githubToken').value);
+    localStorage.setItem('bk_gist_id', document.getElementById('gistId').value);
+    localStorage.setItem('bk_encrypt_key', document.getElementById('encryptKey').value);
+    showToast('设置已保存');
+    closeSettings();
+}
+
+function loadSettings() {
+    document.getElementById('githubToken').value = localStorage.getItem('bk_token') || '';
+    document.getElementById('gistId').value = localStorage.getItem('bk_gist_id') || '';
+    document.getElementById('encryptKey').value = localStorage.getItem('bk_encrypt_key') || 'CAT_Script_Key_2024!';
+}
+
+function openSettings() {
+    loadSettings();
+    document.getElementById('settingsModal').classList.add('active');
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').classList.remove('active');
+}
+
+// ===== 工具函数 =====
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function generateKeyCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let key = 'CAT-';
+    for (let g = 0; g < 3; g++) {
+        for (let i = 0; i < 4; i++) {
+            key += chars[Math.floor(Math.random() * chars.length)];
+        }
+        if (g < 2) key += '-';
+    }
+    return key;
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('已复制: ' + text);
+    }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('已复制: ' + text);
+    });
+}
+
+// ===== 卡密管理 =====
+function generateKeys() {
+    const duration = parseInt(document.getElementById('duration').value);
+    const count = parseInt(document.getElementById('count').value);
+    const note = document.getElementById('note').value;
+
+    if (count < 1 || count > 100) {
+        showToast('数量必须在 1~100 之间');
+        return;
+    }
+
+    const now = Date.now();
+    const newKeys = [];
+
+    for (let i = 0; i < count; i++) {
+        const code = generateKeyCode();
+        newKeys.push({
+            code: code,
+            duration: duration,
+            note: note,
+            createdAt: now,
+            expiresAt: duration === 9999 ? 9999999999999 : now + duration * 24 * 60 * 60 * 1000,
+            used: false,
+            usedAt: null,
+            machineId: null,
+            scripts: ['combat', 'cat', 'utmm', 'npc', 'detector']
+        });
+    }
+
+    keys = [...newKeys, ...keys];
+    localStorage.setItem('bk_keys', JSON.stringify(keys));
+    renderKeys();
+    showToast(`成功生成 ${count} 张卡密`);
+}
+
+function getStatus(key) {
+    const now = Date.now();
+    if (now > key.expiresAt && key.expiresAt !== 9999999999999) return 'expired';
+    if (key.used) return 'used';
+    return 'active';
+}
+
+function getStatusBadge(status) {
+    switch(status) {
+        case 'active': return '<span class="status-badge status-active">有效</span>';
+        case 'used': return '<span class="status-badge status-used">已用</span>';
+        case 'expired': return '<span class="status-badge status-expired">过期</span>';
+        default: return status;
+    }
+}
+
+function formatDate(ts) {
+    if (ts === 9999999999999) return '永久';
+    const d = new Date(ts);
+    return `${d.getMonth()+1}/${d.getDate()}`;
+}
+
+function deleteKey(code) {
+    if (!confirm('确定删除？')) return;
+    keys = keys.filter(k => k.code !== code);
+    localStorage.setItem('bk_keys', JSON.stringify(keys));
+    renderKeys();
+    showToast('已删除');
+}
+
+function renderKeys() {
+    const filter = document.getElementById('filterStatus').value;
+    const search = document.getElementById('searchKey').value.toLowerCase();
+
+    let filtered = keys.filter(k => {
+        const status = getStatus(k);
+        if (filter !== 'all' && status !== filter) return false;
+        if (search && !k.code.toLowerCase().includes(search) && !(k.note && k.note.toLowerCase().includes(search))) return false;
+        return true;
+    });
+
+    const container = document.getElementById('keyList');
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无卡密数据</div>';
+        updateStats();
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="table-header">
+            <div>卡密</div>
+            <div>时长</div>
+            <div>状态</div>
+            <div>操作</div>
+        </div>
+        ${filtered.map(k => `
+        <div class="table-row">
+            <div class="code-cell" onclick="copyToClipboard('${k.code}')">${k.code}</div>
+            <div>${k.duration === 9999 ? '永久' : k.duration + '天'}</div>
+            <div>${getStatusBadge(getStatus(k))}</div>
+            <div><button class="btn-danger" onclick="deleteKey('${k.code}')">删除</button></div>
+        </div>
+        `).join('')}
+    `;
+
+    updateStats();
+}
+
+function updateStats() {
+    const now = Date.now();
+    document.getElementById('statTotal').textContent = keys.length;
+    document.getElementById('statActive').textContent = keys.filter(k => !k.used && (k.expiresAt === 9999999999999 || now <= k.expiresAt)).length;
+}
+
+// ===== GitHub Gist 同步 =====
+async function syncToGist() {
+    const token = localStorage.getItem('bk_token');
+    const gistId = localStorage.getItem('bk_gist_id');
+
+    if (!token) {
+        showToast('请先设置 GitHub Token');
+        openSettings();
+        return;
+    }
+
+    showToast('正在同步...');
+
+    const jsonData = JSON.stringify(keys);
+    const encryptedData = btoa(unescape(encodeURIComponent(jsonData)));
+    const content = `-- CAT HUB卡密数据 v2.0\n-- 格式: CAT-XXXX-XXXX-XXXX\n-- 更新时间: ${new Date().toISOString()}\nKEY_DATA = "${encryptedData}"\n`;
+
+    try {
+        let gist_id = gistId;
+
+        if (!gist_id) {
+            const resp = await fetch('https://api.github.com/gists', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    description: 'CAT HUB卡密数据',
+                    public: false,
+                    files: {
+                        'cat_key_data.lua': { content: content }
+                    }
+                })
+            });
+            if (!resp.ok) throw new Error('创建失败: ' + resp.status);
+            const data = await resp.json();
+            gist_id = data.id;
+            localStorage.setItem('bk_gist_id', gist_id);
+            document.getElementById('gistId').value = gist_id;
+        } else {
+            const resp = await fetch(`https://api.github.com/gists/${gist_id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    files: {
+                        'cat_key_data.lua': { content: content }
+                    }
+                })
+            });
+            if (!resp.ok) throw new Error('更新失败: ' + resp.status);
+        }
+
+        showToast('同步成功！');
+    } catch(e) {
+        showToast('同步失败: ' + e.message);
+        console.error(e);
+    }
+}
+
+async function loadFromGist() {
+    const token = localStorage.getItem('bk_token');
+    const gistId = localStorage.getItem('bk_gist_id');
+
+    if (!token || !gistId) {
+        showToast('请先设置 Token 和 Gist ID');
+        openSettings();
+        return;
+    }
+
+    showToast('正在拉取...');
+
+    try {
+        const resp = await fetch(`https://api.github.com/gists/${gistId}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        if (!resp.ok) throw new Error('拉取失败: ' + resp.status);
+        const data = await resp.json();
+        const file = data.files['cat_key_data.lua'] || data.files['bk_key_data.lua'];
+        if (!file) throw new Error('找不到数据文件');
+
+        const match = file.content.match(/KEY_DATA\s*=\s*"([^"]+)"/);
+        if (!match) throw new Error('数据格式错误');
+
+        const decrypted = decodeURIComponent(escape(atob(match[1])));
+        const loadedKeys = JSON.parse(decrypted);
+
+        if (confirm(`拉取到 ${loadedKeys.length} 张卡密，是否合并？`)) {
+            const map = {};
+            keys.forEach(k => map[k.code] = k);
+            loadedKeys.forEach(k => map[k.code] = k);
+            keys = Object.values(map).sort((a,b) => b.createdAt - a.createdAt);
+            localStorage.setItem('bk_keys', JSON.stringify(keys));
+            renderKeys();
+            showToast('拉取成功');
+        }
+    } catch(e) {
+        showToast('拉取失败: ' + e.message);
+        console.error(e);
+    }
+}
+
+// ===== 初始化 =====
+loadSettings();
+renderKeys();
+
+// 点击弹窗外部关闭
+document.getElementById('settingsModal').addEventListener('click', (e) => {
+    if (e.target.id === 'settingsModal') closeSettings();
+});
+</script>
+
+</body>
+</html>
