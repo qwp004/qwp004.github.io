@@ -678,6 +678,11 @@ async function syncToGist() {
     try {
         let gist_id = gistId;
 
+        const gistFiles = {
+            'cat_key_data.lua': { content: content },
+            'bk_key_data.lua': { content: content }
+        };
+
         if (!gist_id) {
             const resp = await fetch('https://api.github.com/gists', {
                 method: 'POST',
@@ -688,9 +693,7 @@ async function syncToGist() {
                 body: JSON.stringify({
                     description: 'CAT HUB卡密数据',
                     public: false,
-                    files: {
-                        'cat_key_data.lua': { content: content }
-                    }
+                    files: gistFiles
                 })
             });
             if (!resp.ok) throw new Error('创建失败: ' + resp.status);
@@ -706,9 +709,7 @@ async function syncToGist() {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    files: {
-                        'cat_key_data.lua': { content: content }
-                    }
+                    files: gistFiles
                 })
             });
             if (!resp.ok) throw new Error('更新失败: ' + resp.status);
@@ -740,7 +741,7 @@ async function loadFromGist() {
         if (!resp.ok) throw new Error('拉取失败: ' + resp.status);
         const data = await resp.json();
         const file = data.files['cat_key_data.lua'] || data.files['bk_key_data.lua'];
-        if (!file) throw new Error('找不到数据文件');
+        if (!file) throw new Error('找不到数据文件（cat_key_data.lua 或 bk_key_data.lua）');
 
         const match = file.content.match(/KEY_DATA\s*=\s*"([^"]+)"/);
         if (!match) throw new Error('数据格式错误');
