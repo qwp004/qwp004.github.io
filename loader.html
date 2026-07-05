@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAT HUB 加载器 - 复制代码</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0d1117; color: #fff; font-family: -apple-system, sans-serif; padding: 16px; }
+h1 { font-size: 20px; margin-bottom: 8px; color: #58a6ff; }
+p { color: #8b949e; font-size: 13px; margin-bottom: 16px; }
+.copy-btn { 
+    width: 100%; padding: 16px; border: none; border-radius: 12px; 
+    font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 16px;
+    background: linear-gradient(135deg, #1f6feb, #8957e5); color: #fff;
+}
+.copy-btn:active { transform: scale(0.97); }
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(120px); background:#161b22; border:1px solid #30363d; color:#e6edf3; padding:14px 24px; border-radius:12px; font-size:14px; z-index:300; opacity:0; transition:all 0.3s; }
+.toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+.info { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.info h3 { color: #3fb950; margin-bottom: 8px; font-size: 14px; }
+.info p { font-size: 12px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<h1>CAT HUB 加载器 v3.0</h1>
+<p>点击下方按钮复制完整代码，粘贴到Roblox执行器中运行</p>
+
+<div class="info">
+<h3>使用步骤：</h3>
+<p>1. 点击"复制全部代码"按钮<br>
+2. 打开Roblox执行器（Delta等）<br>
+3. 粘贴代码并执行<br>
+4. 输入卡密 CAT-XXXX-XXXX-XXXX</p>
+</div>
+
+<button class="copy-btn" onclick="copyCode()">📋 复制全部代码</button>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function copyCode() {
+    navigator.clipboard.writeText(document.getElementById('code').innerText).then(() => {
+        showToast('已复制！粘贴到执行器运行');
+    }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = document.getElementById('code').innerText;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('已复制！');
+    });
+}
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+}
+</script>
+<pre id="code" style="display:none;">-- ============================================================
+-- CAT HUB 脚本 - 加密加载器 v2.0
+-- 作者: CAT_Script
+-- 说明: 卡密验证通过后，从远程加载加密源码并解密执行
+-- 更新: 修复格式错误、添加防重复UI检测、CAT前缀卡密
+-- ============================================================
+
+local Players = game:GetService(&quot;Players&quot;)
+local PlayerGui = Players.LocalPlayer:WaitForChild(&quot;PlayerGui&quot;)
+local CoreGui = game:GetService(&quot;CoreGui&quot;)
+
+local function CheckUIExists()
+    local uiNames = {
+        &quot;四合集_卡密界面&quot;, &quot;CAT_HUB_卡密界面&quot;, &quot;CAT_HUB_Main&quot;,
+        &quot;四合集_Main&quot;, &quot;CombatMaster&quot;, &quot;ShirokoHub&quot;
+    }
+    local function scan(parent)
+        if not parent then return false end
+        for _, name in ipairs(uiNames) do
+            local found = parent:FindFirstChild(name)
+            if found and found:IsA(&quot;ScreenGui&quot;) then
+                return true
+            end
+        end
+        return false
+    end
+    if scan(PlayerGui) then return true end
+    if scan(CoreGui) then return true end
+    if getgenv and getgenv()[&quot;CAT_HUB_加载器_已加载&quot;] then return true end
+    if getgenv and getgenv()[&quot;四合集_加载器_已加载&quot;] then return true end
+    return false
+end
+
+if CheckUIExists() then
+    return
+end
+
+if getgenv then getgenv()[&quot;CAT_HUB_加载器_已加载&quot;] = true end
+
+local HttpService = game:GetService(&quot;HttpService&quot;)
+local TweenService = game:GetService(&quot;TweenService&quot;)
+local UserInputService = game:GetService(&quot;UserInputService&quot;)
+
+local Player = Players.LocalPlayer
+
+local CONFIG = {
+    ScriptName = &quot;CAT HUB 脚本&quot;,
+    Version = &quot;v3.0 Loader&quot;,
+    KeyGistUrl = &quot;https://gist.githubusercontent.com/qwp004/a1a80d6d6850f0467567e9b5472503bb/raw/cat_key_data.lua&quot;,
+    ScriptGistUrl = &quot;https://gist.githubusercontent.com/qwp004/efe94e86bef85b9f9998258569f53b55/raw/&quot;,
+    EncryptKey = &quot;CAT_Script_2024_Secret_Key!&quot;,
+    SaveKeyFlag = &quot;CAT_HUB_已保存卡密&quot;,
+}
+
+-- ============================================================
+-- 工具函数
+-- ============================================================
+
+local function SafeHttpGet(url)
+    local ok, result = pcall(function()
+        return HttpService:GetAsync(url)
+    end)
+    if ok and result and result ~= &quot;&quot; then
+        return result
+    end
+    
+    local ok2, result2 = pcall(function()
+        return game:HttpGet(url)
+    end)
+    if ok2 and result2 and result2 ~= &quot;&quot; then
+        return result2
+    end
+    
+    local ok3, result3 = pcall(function()
+        if request then
+            local resp = request({Url = url, Method = &quot;GET&quot;})
+            if resp and resp.Body then
+                return resp.Body
+            end
+        end
+        return nil
+    end)
+    if ok3 and result3 and result3 ~= &quot;&quot; then
+        return result3
+    end
+    
+    return nil
+end
+
+local function Base64Decode(str)
+    local ok, result = pcall(function()
+        return HttpService:DecodeBase64(str)
+    end)
+    if ok and result then
+        return result
+    end
+    
+    local b = &#x27;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&#x27;
+    str = string.gsub(str, &#x27;[^&#x27;..b..&#x27;=]&#x27;, &#x27;&#x27;)
+    local result2 = {}
+    
+    local function charVal(idx)
+        local ch = string.sub(str, idx, idx)
+        if ch == &#x27;=&#x27; or ch == &#x27;&#x27; then return 0 end
+        local pos = string.find(b, ch, 1, true)
+        if pos then return pos - 1 end
+        return 0
+    end
+    
+    for i = 1, #str, 4 do
+        local c1 = charVal(i)
+        local c2 = charVal(i+1)
+        local c3 = charVal(i+2)
+        local c4 = charVal(i+3)
+        
+        local b1 = bit32.band(bit32.bor(bit32.lshift(c1, 2), bit32.rshift(c2, 4)), 0xFF)
+        local b2 = bit32.band(bit32.bor(bit32.lshift(bit32.band(c2, 0x0F), 4), bit32.rshift(c3, 2)), 0xFF)
+        local b3 = bit32.band(bit32.bor(bit32.lshift(bit32.band(c3, 0x03), 6), c4), 0xFF)
+        
+        table.insert(result2, string.char(b1))
+        if string.sub(str, i+2, i+2) ~= &#x27;=&#x27; then
+            table.insert(result2, string.char(b2))
+        end
+        if string.sub(str, i+3, i+3) ~= &#x27;=&#x27; then
+            table.insert(result2, string.char(b3))
+        end
+    end
+    local decoded = table.concat(result2)
+    if decoded and #decoded &gt; 0 then
+        return decoded
+    end
+    
+    return nil
+end
+
+local function XORDecryptBytes(encryptedStr, key)
+    local keyLen = #key
+    local len = #encryptedStr
+    local batchSize = 4096
+    local result = {}
+    
+    for i = 1, len, batchSize do
+        local endIdx = math.min(i + batchSize - 1, len)
+        local chunk = {}
+        for j = i, endIdx do
+            local byte = string.byte(encryptedStr, j)
+            local keyByte = string.byte(key, ((j - 1) % keyLen) + 1)
+            chunk[#chunk + 1] = string.char(bit32.bxor(byte, keyByte))
+        end
+        result[#result + 1] = table.concat(chunk)
+    end
+    
+    return table.concat(result)
+end
+
+local function GetMachineId()
+    local id = &quot;unknown&quot;
+    pcall(function()
+        if getgenv then
+            id = tostring(getgenv().machine_id or &quot;unknown&quot;)
+        end
+    end)
+    if id == &quot;unknown&quot; then
+        pcall(function()
+            id = tostring(Player.UserId) .. &quot;_&quot; .. tostring(Player.Name)
+        end)
+    end
+    return id
+end
+
+local function VerifyKey(inputKey)
+    if not inputKey or inputKey == &quot;&quot; then
+        return false, &quot;请输入卡密&quot;
+    end
+
+    local response = SafeHttpGet(CONFIG.KeyGistUrl)
+    if not response then
+        return false, &quot;无法连接验证服务器，请检查网络&quot;
+    end
+
+    response = response:match(&quot;^%s*(.-)%s*$&quot;)
+
+    local directJson = nil
+    pcall(function()
+        local testOk, testData = pcall(function()
+            return HttpService:JSONDecode(response)
+        end)
+        if testOk and testData then
+            directJson = testData
+        end
+    end)
+
+    local keyDataJson = nil
+    if not directJson then
+        local encStr = response:match(&#x27;KEY_DATA%s*=%s*&quot;([^&quot;]+)&quot;&#x27;)
+        if encStr then
+            local decoded = Base64Decode(encStr)
+            if decoded then
+                local jOk, jData = pcall(function()
+                    return HttpService:JSONDecode(decoded)
+                end)
+                if jOk and jData then
+                    keyDataJson = jData
+                end
+            end
+        end
+    end
+
+    local data = directJson or keyDataJson
+    if not data then
+        return false, &quot;卡密数据解析失败&quot;
+    end
+
+    local keyData = nil
+
+    if data.keys and data.keys[inputKey] then
+        keyData = data.keys[inputKey]
+    end
+
+    if not keyData and type(data) == &quot;table&quot; then
+        for _, item in ipairs(data) do
+            if item.code == inputKey then
+                keyData = item
+                break
+            end
+        end
+    end
+
+    if not keyData then
+        return false, &quot;卡密无效&quot;
+    end
+
+    local used = keyData.used or false
+    local machine = keyData.machine or &quot;&quot;
+    if used == true and machine ~= &quot;&quot; then
+        local machineId = GetMachineId()
+        if machine ~= machineId then
+            return false, &quot;卡密已被其他设备使用&quot;
+        end
+    end
+
+    local duration = keyData.duration
+    if type(duration) == &quot;number&quot; and duration &gt; 0 then
+        if keyData.created then
+            local createdTime = tonumber(keyData.created)
+            if createdTime then
+                local expireTime = createdTime + (duration * 86400)
+                if os.time() &gt; expireTime then
+                    return false, &quot;卡密已过期&quot;
+                end
+            end
+        end
+    elseif keyData.expire then
+        local expireTime = tonumber(keyData.expire)
+        if expireTime and os.time() &gt; expireTime then
+            return false, &quot;卡密已过期&quot;
+        end
+    end
+
+    return true, &quot;验证成功&quot;
+end
+
+local function SaveKey(key)
+    pcall(function()
+        if setgenv then
+            setgenv(CONFIG.SaveKeyFlag, key)
+        end
+    end)
+    pcall(function()
+        if writefile then
+            writefile(CONFIG.SaveKeyFlag .. &quot;.txt&quot;, key)
+        end
+    end)
+end
+
+local function LoadSavedKey()
+    local saved = nil
+    pcall(function()
+        if getgenv then
+            local val = getgenv(CONFIG.SaveKeyFlag)
+            if type(val) == &quot;string&quot; and val ~= &quot;&quot; then
+                saved = val
+            end
+        end
+    end)
+    if saved and saved ~= &quot;&quot; then
+        return saved
+    end
+    pcall(function()
+        if readfile then
+            local val = readfile(CONFIG.SaveKeyFlag .. &quot;.txt&quot;)
+            if type(val) == &quot;string&quot; and val ~= &quot;&quot; then
+                saved = val
+            end
+        end
+    end)
+    return saved
+end
+
+-- ============================================================
+-- UI 工具函数
+-- ============================================================
+
+local function CreateScreenGui(name)
+    local gui = Instance.new(&quot;ScreenGui&quot;)
+    gui.Name = name
+    gui.ResetOnSpawn = false
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    gui.DisplayOrder = 99999
+    
+    local useCoreGui = false
+    pcall(function()
+        if gethui then
+            local hui = gethui()
+            if hui then
+                gui.Parent = hui
+                useCoreGui = true
+            end
+        end
+    end)
+    if not useCoreGui then
+        pcall(function()
+            gui.Parent = CoreGui
+            if gui.Parent then useCoreGui = true end
+        end)
+    end
+    if not useCoreGui then
+        gui.Parent = PlayerGui
+    end
+    return gui
+end
+
+local function AddCorner(parent, radius)
+    local corner = Instance.new(&quot;UICorner&quot;)
+    corner.CornerRadius = UDim.new(0, radius or 8)
+    corner.Parent = parent
+    return corner
+end
+
+local function MakeDraggable(frame, handle)
+    local dragging = false
+    local dragInput = nil
+    local dragStart = Vector3.new(0, 0, 0)
+    local startPos = UDim2.new()
+
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    handle.InputChanged:Connect(function(input)
+        if dragging
+            and (input.UserInputType == Enum.UserInputType.MouseMovement
+                or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+-- ============================================================
+-- 加载加密脚本
+-- ============================================================
+
+local function LoadEncryptedScript(statusCallback)
+    local function updateStatus(msg)
+        print(&quot;[加载器] &quot; .. msg)
+        if statusCallback then
+            pcall(statusCallback, msg)
+        end
+    end
+    
+    updateStatus(&quot;正在下载脚本数据...&quot;)
+    local encryptedData = SafeHttpGet(CONFIG.ScriptGistUrl)
+    if not encryptedData then
+        updateStatus(&quot;❌ 无法加载脚本数据&quot;)
+        return false, &quot;无法加载脚本数据&quot;
+    end
+    updateStatus(&quot;已下载 &quot; .. #encryptedData .. &quot; 字节，正在解析...&quot;)
+    
+    local b64str = nil
+    local patterns = {
+        &#x27;KEY%s*=%s*&quot;([^&quot;]+)&quot;&#x27;,
+        &#x27;SCRIPT_DATA%s*=%s*&quot;([^&quot;]+)&quot;&#x27;,
+        &#x27;data%s*=%s*&quot;([^&quot;]+)&quot;&#x27;,
+        &#x27;encrypted%s*=%s*&quot;([^&quot;]+)&quot;&#x27;,
+    }
+    for _, pat in ipairs(patterns) do
+        local match = encryptedData:match(pat)
+        if match and #match &gt; 100 then
+            b64str = match
+            break
+        end
+    end
+    
+    if not b64str then
+        local cleanData = encryptedData:match(&quot;^%s*(.-)%s*$&quot;)
+        if #cleanData &gt; 100 and not cleanData:find(&quot;\n&quot;) then
+            b64str = cleanData
+        end
+    end
+    
+    if not b64str then
+        updateStatus(&quot;❌ 脚本数据格式错误&quot;)
+        return false, &quot;脚本数据格式错误&quot;
+    end
+    updateStatus(&quot;解析Base64数据 (&quot; .. #b64str .. &quot; 字符)...&quot;)
+    
+    local decoded = Base64Decode(b64str)
+    if not decoded then
+        updateStatus(&quot;❌ Base64解码失败&quot;)
+        return false, &quot;脚本解码失败&quot;
+    end
+    updateStatus(&quot;Base64解码完成，正在解密...&quot;)
+    
+    -- 让UI有机会更新
+    task.wait(0.1)
+    
+    local decrypted = XORDecryptBytes(decoded, CONFIG.EncryptKey)
+    if not decrypted or decrypted == &quot;&quot; then
+        updateStatus(&quot;❌ 解密失败&quot;)
+        return false, &quot;脚本解密失败&quot;
+    end
+    updateStatus(&quot;解密完成 (&quot; .. #decrypted .. &quot; 字符)，正在编译...&quot;)
+    
+    -- 让UI有机会更新
+    task.wait(0.1)
+    
+    local fn, err = loadstring(decrypted)
+    if not fn then
+        updateStatus(&quot;❌ 编译失败: &quot; .. tostring(err))
+        return false, &quot;脚本编译失败: &quot; .. tostring(err)
+    end
+    updateStatus(&quot;编译成功，正在执行...&quot;)
+    
+    local execOk, execErr = pcall(fn)
+    if not execOk then
+        updateStatus(&quot;❌ 执行失败: &quot; .. tostring(execErr))
+        return false, &quot;脚本执行失败: &quot; .. tostring(execErr)
+    end
+    updateStatus(&quot;✅ 脚本执行成功！&quot;)
+    
+    return true
+end
+
+-- ============================================================
+-- 卡密验证界面
+-- ============================================================
+
+local function CreateKeyUI()
+    local gui = CreateScreenGui(&quot;CAT_HUB_卡密界面&quot;)
+
+    local viewSize = Vector2.new(800, 600)
+    pcall(function()
+        viewSize = workspace.CurrentCamera.ViewportSize
+    end)
+    local isMobile = viewSize.X &lt; 700
+
+    local main = Instance.new(&quot;Frame&quot;)
+    main.Name = &quot;MainPanel&quot;
+    main.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+    main.BackgroundTransparency = 0.1
+    main.Size = UDim2.new(0, isMobile and 300 or 360, 0, isMobile and 300 or 280)
+    main.Position = UDim2.new(0.5, -(isMobile and 150 or 180), 0.5, -(isMobile and 150 or 140))
+    main.Active = true
+    main.Parent = gui
+    AddCorner(main, 10)
+
+    local titleBar = Instance.new(&quot;Frame&quot;)
+    titleBar.Name = &quot;TitleBar&quot;
+    titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
+    titleBar.BackgroundTransparency = 0.3
+    titleBar.Size = UDim2.new(1, 0, 0, 40)
+    titleBar.Parent = main
+    AddCorner(titleBar, 10)
+
+    local titleText = Instance.new(&quot;TextLabel&quot;)
+    titleText.BackgroundTransparency = 1
+    titleText.Text = &quot;🔑 &quot; .. CONFIG.ScriptName
+    titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleText.TextSize = isMobile and 14 or 16
+    titleText.Font = Enum.Font.GothamBold
+    titleText.Size = UDim2.new(1, -50, 1, 0)
+    titleText.Position = UDim2.new(0, 10, 0, 0)
+    titleText.TextXAlignment = Enum.TextXAlignment.Left
+    titleText.Parent = titleBar
+
+    local closeBtn = Instance.new(&quot;TextButton&quot;)
+    closeBtn.Name = &quot;CloseButton&quot;
+    closeBtn.BackgroundTransparency = 1
+    closeBtn.Text = &quot;✕&quot;
+    closeBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
+    closeBtn.TextSize = 20
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.Size = UDim2.new(0, 40, 0, 40)
+    closeBtn.Position = UDim2.new(1, -40, 0, 0)
+    closeBtn.Active = true
+    closeBtn.Selectable = true
+    closeBtn.AutoButtonColor = true
+    closeBtn.ZIndex = 10
+    closeBtn.Parent = titleBar
+
+    local function closeWindow()
+        pcall(function() gui:Destroy() end)
+    end
+    closeBtn.MouseButton1Click:Connect(closeWindow)
+    closeBtn.MouseButton1Down:Connect(closeWindow)
+    closeBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            closeWindow()
+        end
+    end)
+
+    MakeDraggable(main, titleBar)
+
+    local iconLabel = Instance.new(&quot;TextLabel&quot;)
+    iconLabel.BackgroundTransparency = 1
+    iconLabel.Text = &quot;🔐&quot;
+    iconLabel.TextSize = 32
+    iconLabel.Size = UDim2.new(1, 0, 0, 45)
+    iconLabel.Position = UDim2.new(0, 0, 0, 50)
+    iconLabel.Parent = main
+
+    local hintLabel = Instance.new(&quot;TextLabel&quot;)
+    hintLabel.BackgroundTransparency = 1
+    hintLabel.Text = &quot;请输入卡密以使用脚本&quot;
+    hintLabel.TextColor3 = Color3.fromRGB(170, 170, 185)
+    hintLabel.TextSize = isMobile and 12 or 13
+    hintLabel.Font = Enum.Font.Gotham
+    hintLabel.Size = UDim2.new(1, 0, 0, 20)
+    hintLabel.Position = UDim2.new(0, 0, 0, 95)
+    hintLabel.Parent = main
+
+    local inputBox = Instance.new(&quot;TextBox&quot;)
+    inputBox.Name = &quot;InputBox&quot;
+    inputBox.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+    inputBox.BackgroundTransparency = 0.3
+    inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    inputBox.TextSize = isMobile and 14 or 15
+    inputBox.Font = Enum.Font.Gotham
+    inputBox.PlaceholderText = &quot;请在此输入卡密...&quot;
+    inputBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
+    inputBox.Text = &quot;&quot;
+    inputBox.Size = UDim2.new(1, -30, 0, isMobile and 36 or 38)
+    inputBox.Position = UDim2.new(0, 15, 0, isMobile and 122 or 120)
+    inputBox.ClearTextOnFocus = false
+    inputBox.Active = true
+    inputBox.Selectable = true
+    inputBox.ZIndex = 5
+    inputBox.Parent = main
+    AddCorner(inputBox, 6)
+
+    local statusLabel = Instance.new(&quot;TextLabel&quot;)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = &quot;&quot;
+    statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+    statusLabel.TextSize = isMobile and 11 or 12
+    statusLabel.Font = Enum.Font.Gotham
+    statusLabel.Size = UDim2.new(1, 0, 0, 20)
+    statusLabel.Position = UDim2.new(0, 0, 0, isMobile and 162 or 163)
+    statusLabel.Parent = main
+
+    local verifyBtn = Instance.new(&quot;TextButton&quot;)
+    verifyBtn.Name = &quot;VerifyButton&quot;
+    verifyBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
+    verifyBtn.Text = &quot;验证卡密&quot;
+    verifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    verifyBtn.TextSize = isMobile and 14 or 15
+    verifyBtn.Font = Enum.Font.GothamBold
+    verifyBtn.Size = UDim2.new(1, -30, 0, isMobile and 38 or 40)
+    verifyBtn.Position = UDim2.new(0, 15, 0, isMobile and 188 or 190)
+    verifyBtn.BorderSizePixel = 0
+    verifyBtn.AutoButtonColor = true
+    verifyBtn.Active = true
+    verifyBtn.Selectable = true
+    verifyBtn.ZIndex = 10
+    verifyBtn.Parent = main
+    AddCorner(verifyBtn, 6)
+
+    local versionLabel = Instance.new(&quot;TextLabel&quot;)
+    versionLabel.BackgroundTransparency = 1
+    versionLabel.Text = CONFIG.Version
+    versionLabel.TextColor3 = Color3.fromRGB(80, 80, 100)
+    versionLabel.TextSize = 10
+    versionLabel.Font = Enum.Font.Gotham
+    versionLabel.Size = UDim2.new(1, 0, 0, 15)
+    versionLabel.Position = UDim2.new(0, 0, 1, -18)
+    versionLabel.Parent = main
+
+    local isVerifying = false
+
+    local function doVerify()
+        if isVerifying then return end
+
+        local key = inputBox.Text
+        if key == &quot;&quot; then
+            statusLabel.Text = &quot;请输入卡密&quot;
+            statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+            return
+        end
+
+        isVerifying = true
+        verifyBtn.Text = &quot;验证中...&quot;
+        verifyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+        statusLabel.Text = &quot;正在连接服务器...&quot;
+        statusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+
+        coroutine.wrap(function()
+            local ok, verified, msg = pcall(function()
+                return VerifyKey(key)
+            end)
+
+            if not ok then
+                statusLabel.Text = &quot;连接失败&quot;
+                statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+                verifyBtn.Text = &quot;验证卡密&quot;
+                verifyBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
+                isVerifying = false
+                return
+            end
+
+            if verified then
+                statusLabel.Text = &quot;验证成功，加载脚本中...&quot;
+                statusLabel.TextColor3 = Color3.fromRGB(80, 255, 120)
+                
+                -- 把已验证的卡密传给脚本（多种方式确保兼容性）
+                pcall(function()
+                    if setgenv then
+                        setgenv(&quot;CAT_HUB_已验证卡密&quot;, key)
+                    end
+                end)
+                pcall(function()
+                    if getgenv then
+                        local env = getgenv()
+                        env[&quot;CAT_HUB_已验证卡密&quot;] = key
+                    end
+                end)
+                pcall(function()
+                    _G[&quot;CAT_HUB_已验证卡密&quot;] = key
+                end)
+                pcall(function()
+                    shared[&quot;CAT_HUB_已验证卡密&quot;] = key
+                end)
+                
+                task.wait(0.3)
+                verifyBtn.Text = &quot;加载中...&quot;
+                verifyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+                statusLabel.Text = &quot;正在加载脚本...&quot;
+                statusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+                
+                local loadOk, loadErr = LoadEncryptedScript(function(msg)
+                    statusLabel.Text = msg
+                end)
+                if loadOk then
+                    statusLabel.Text = &quot;加载成功！&quot;
+                    statusLabel.TextColor3 = Color3.fromRGB(80, 255, 120)
+                    task.wait(0.5)
+                    gui:Destroy()
+                else
+                    statusLabel.Text = loadErr or &quot;脚本加载失败&quot;
+                    statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+                    verifyBtn.Text = &quot;验证卡密&quot;
+                    verifyBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
+                    isVerifying = false
+                end
+            else
+                statusLabel.Text = msg or &quot;卡密无效&quot;
+                statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+                verifyBtn.Text = &quot;验证卡密&quot;
+                verifyBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
+                isVerifying = false
+            end
+        end)()
+    end
+
+    -- 防抖机制
+    local verifyDebounce = false
+    local function safeVerify()
+        if verifyDebounce then return end
+        if isVerifying then return end
+        verifyDebounce = true
+        doVerify()
+        task.delay(2, function()
+            verifyDebounce = false
+        end)
+    end
+
+    verifyBtn.Activated:Connect(safeVerify)
+
+    inputBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            safeVerify()
+        end
+    end)
+
+    -- 不自动填充卡密，等待手动输入
+    print(&quot;[加载器] 等待手动输入卡密&quot;)
+end
+
+-- ============================================================
+-- 启动入口
+-- ============================================================
+
+print(&quot;=====================================&quot;)
+print(&quot;[&quot; .. CONFIG.ScriptName .. &quot;] &quot; .. CONFIG.Version)
+print(&quot;加密加载器启动中...&quot;)
+print(&quot;=====================================&quot;)
+
+CreateKeyUI()
+</pre>
+</body>
+</html>
